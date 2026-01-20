@@ -102,7 +102,7 @@ def has_subsystem(subsystem_name: str) -> bool:
         # Add other Comp subsystems as needed
     }
     
-    if currentRobot == Robot.LARRY:
-        return subsystem_name.lower() in LARRY_SUBSYSTEMS
-    else:  # COMP or UNKNOWN defaults to COMP
+    if currentRobot == Robot.COMP:
         return subsystem_name.lower() in COMP_SUBSYSTEMS
+    else:  # LARRY or UNKNOWN defaults to LARRY
+        return subsystem_name.lower() in LARRY_SUBSYSTEMS
