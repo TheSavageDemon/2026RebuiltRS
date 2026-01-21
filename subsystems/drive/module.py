@@ -23,7 +23,7 @@ from wpimath.system.plant import LinearSystemId
 
 from constants import Constants
 from subsystems.toast import *
-from util import tryUntilOk, LoggedTunableNumber, PhoenixOdometryThread
+from util import tryUntilOk, LoggedTunableNumber, PhoenixOdometryThread, LoggedTracer
 
 rotations_per_second = float
 
@@ -219,6 +219,7 @@ class ModuleIOTalonFX(ModuleIO):
         self._steerPositionQueue.clear()
 
     def setDriveOpenLoop(self, output: float) -> None:
+        LoggedTracer.record("Module/DriveOpenLoop")
         match driveClosedLoopOutput:
             case ClosedLoopOutputType.VOLTAGE:
                 self._driveTalon.set_control(self._voltageRequest.with_output(output))
@@ -226,6 +227,7 @@ class ModuleIOTalonFX(ModuleIO):
                 self._driveTalon.set_control(self._torqueCurrentRequest.with_output(output))
 
     def setSteerOpenLoop(self, output: float) -> None:
+        LoggedTracer.record("Module/SteerOpenLoop")
         match steerClosedLoopOutput:
             case ClosedLoopOutputType.VOLTAGE:
                 self._steerTalon.set_control(self._voltageRequest.with_output(output))
@@ -233,6 +235,7 @@ class ModuleIOTalonFX(ModuleIO):
                 self._steerTalon.set_control(self._torqueCurrentRequest.with_output(output))
     
     def setDriveVelocity(self, velocity: radians_per_second, feedforward: float) -> None:
+        LoggedTracer.record("Module/DriveVelocity")
         velocityRotPerSec = radiansToRotations(velocity)
         match driveClosedLoopOutput:
             case ClosedLoopOutputType.VOLTAGE:
@@ -241,6 +244,7 @@ class ModuleIOTalonFX(ModuleIO):
                 self._driveTalon.set_control(self._velocityTorqueCurrentRequest.with_velocity(velocityRotPerSec).with_feed_forward(feedforward))
                 
     def setSteerPosition(self, rotation: Rotation2d) -> None:
+        LoggedTracer.record("Module/SteerPosition")
         match steerClosedLoopOutput:
             case ClosedLoopOutputType.VOLTAGE:
                 self._steerTalon.set_control(self._positionVoltageRequest.with_position(rotation.degrees() / 360))

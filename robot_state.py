@@ -4,11 +4,11 @@ from wpilib import DataLogManager, DriverStation, Field2d, SmartDashboard
 from wpimath.geometry import Pose2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModuleState
 
-from subsystems.swerve import SwerveSubsystem
+from subsystems.drive import Drive
 
 
 class RobotState:
-    def __init__(self, drivetrain: SwerveSubsystem):
+    def __init__(self, drivetrain: Drive):
         self.swerve = drivetrain
 
         DriverStation.startDataLog(DataLogManager.getLog())
