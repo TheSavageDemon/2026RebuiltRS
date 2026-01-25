@@ -22,7 +22,7 @@ class IntakeSubsystem(StateSubsystem):
     """
 
     class SubsystemState(Enum):
-        HOLD = auto()
+        STOP = auto()
         INTAKE = auto()
         OUTPUT = auto()
 
@@ -37,11 +37,11 @@ class IntakeSubsystem(StateSubsystem):
 
 
     _state_configs: dict[SubsystemState, tuple[int, bool]] = {
-        SubsystemState.HOLD: (0, False),
+        SubsystemState.STOP: (0, False),
     }
 
     def __init__(self, io: IntakeIO) -> None:
-        super().__init__("Intake", self.SubsystemState.HOLD)
+        super().__init__("Intake", self.SubsystemState.STOP)
 
         self._io: Final[IntakeIO] = io
         self._inputs = IntakeIO.IntakeIOInputs()

@@ -43,11 +43,11 @@ match Constants.currentMode:
         )
         
         # Create subsystem with real hardware IO
-        self._climber = ClimberSubsystem(climber_io)
+        self.climber = ClimberSubsystem(climber_io)
         
     case Constants.Mode.SIM:
         # Create subsystem with simulation IO
-        self._climber = ClimberSubsystem(ClimberIOSim())
+        self.climber = ClimberSubsystem(ClimberIOSim())
 ```
 
 ### 2. In `ClimberSubsystem`

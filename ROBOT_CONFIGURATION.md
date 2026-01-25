@@ -168,11 +168,11 @@ Subsystems are created conditionally in `robot_container.py`:
 
 ```python
 # Subsystems are Optional[SubsystemType]
-self._climber: Optional[ClimberSubsystem] = None
+self.climber: Optional[ClimberSubsystem] = None
 
 # Create only if available
 if has_subsystem("climber"):
-    self._climber = ClimberSubsystem(climber_io)
+    self.climber = ClimberSubsystem(climber_io)
 ```
 
 ### Checking if Subsystem Exists
@@ -186,8 +186,8 @@ if container.has_climber():
     climber.set_desired_state(...)
 
 # Or check directly
-if container._climber is not None:
-    container._climber.set_desired_state(...)
+if container.climber is not None:
+    container.climber.set_desired_state(...)
 ```
 
 ### Superstructure with Optional Subsystems
@@ -198,8 +198,8 @@ The `Superstructure` class accepts optional subsystems:
 superstructure = Superstructure(
     drivetrain=container._drivetrain,
     vision=container._vision,
-    climber=container._climber,  # Can be None
-    intake=container._intake      # Can be None
+    climber=container.climber,  # Can be None
+    intake=container.intake      # Can be None
 )
 ```
 
