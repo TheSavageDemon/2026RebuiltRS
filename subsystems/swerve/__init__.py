@@ -33,55 +33,37 @@ class SwerveSubsystem(Subsystem, swerve.SwerveDrivetrain):
     _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(180)
     """Red alliance sees forward as 180 degrees (toward blue alliance wall)"""
 
-    class BranchSide(Enum):
+    class TowerSide(Enum):
         """
         Determines which side of the reef we score on.
         """
         LEFT = auto()
         RIGHT = auto()
 
-    _blue_branch_left_targets = [
-        Pose2d(3.091, 4.181, degreesToRadians(0)),  # A
-        Pose2d(3.656, 2.916, degreesToRadians(60)),  # C
-        Pose2d(5.023, 2.772, degreesToRadians(120)),  # E
-        Pose2d(5.850, 3.851, degreesToRadians(180)),  # G
-        Pose2d(5.347, 5.134, degreesToRadians(240)),  # I
-        Pose2d(3.932, 5.302, degreesToRadians(300)),  # K
-    ]
+    _blue_tower_left_target =  Pose2d(3.091, 4.181, degreesToRadians(0)) # Need to set correct values
 
-    _blue_branch_right_targets = [
-        Pose2d(3.091, 3.863, degreesToRadians(0)),  # B
-        Pose2d(3.956, 2.748, degreesToRadians(60)),  # D
-        Pose2d(5.323, 2.928, degreesToRadians(120)),  # F
-        Pose2d(5.862, 4.187, degreesToRadians(180)),  # H
-        Pose2d(5.047, 5.290, degreesToRadians(240)),  # J
-        Pose2d(3.668, 5.110, degreesToRadians(300)),  # L
-    ]
+    _blue_tower_right_target =  Pose2d(3.091, 3.863, degreesToRadians(0)) # Need to set correct values
 
-    _red_branch_left_targets = [
-        Pose2d(
-            Constants.FIELD_LAYOUT.getFieldLength() - pose.X(),
-            Constants.FIELD_LAYOUT.getFieldWidth() - pose.Y(),
-            pose.rotation() + Rotation2d.fromDegrees(180)
-        ) for pose in _blue_branch_left_targets
-    ]
+    _red_tower_left_target =  Pose2d(
+            Constants.FIELD_LAYOUT.getFieldLength() - _blue_tower_left_target.X(),
+            Constants.FIELD_LAYOUT.getFieldWidth() - _blue_tower_left_target.Y(),
+            _blue_tower_left_target.rotation() + Rotation2d.fromDegrees(180)
+        )
 
-    _red_branch_right_targets = [
-        Pose2d(
-            Constants.FIELD_LAYOUT.getFieldLength() - pose.X(),
-            Constants.FIELD_LAYOUT.getFieldWidth() - pose.Y(),
-            pose.rotation() + Rotation2d.fromDegrees(180)
-        ) for pose in _blue_branch_right_targets
-    ]
+    _red_tower_right_target =  Pose2d(
+        Constants.FIELD_LAYOUT.getFieldLength() - _blue_tower_right_target.X(),
+        Constants.FIELD_LAYOUT.getFieldWidth() - _blue_tower_right_target.Y(),
+        _blue_tower_right_target.rotation() + Rotation2d.fromDegrees(180)
+    )
 
-    _branch_targets = {
+    _tower_targets = {
         DriverStation.Alliance.kBlue: {
-            BranchSide.LEFT: _blue_branch_left_targets,
-            BranchSide.RIGHT: _blue_branch_right_targets,
+            TowerSide.LEFT: _blue_tower_left_target,
+            TowerSide.RIGHT: _blue_tower_right_target,
         },
         DriverStation.Alliance.kRed: {
-            BranchSide.LEFT: _red_branch_left_targets,
-            BranchSide.RIGHT: _red_branch_right_targets,
+            TowerSide.LEFT: _red_tower_left_target,
+            TowerSide.RIGHT: _red_tower_right_target,
         }
     }
 
@@ -363,10 +345,8 @@ class SwerveSubsystem(Subsystem, swerve.SwerveDrivetrain):
     def sys_id_dynamic(self, direction: SysIdRoutine.Direction) -> Command:
         return self._sys_id_routine_to_apply.dynamic(direction)
 
-    def get_closest_branch(self, branch_side: BranchSide) -> Pose2d:
-        closest_branch = min(self._branch_targets[DriverStation.getAlliance()][branch_side], key=lambda pose: self.get_distance_to_line(self.get_state().pose, pose))
-        # self._closest_branch_pub.set(closest_branch)
-        return closest_branch
+    def get_tower_target(self, tower_side: TowerSide) -> Pose2d:
+        return self._tower_targets[DriverStation.getAlliance()][tower_side]
 
     def periodic(self) -> None:
         """
@@ -397,38 +377,6 @@ class SwerveSubsystem(Subsystem, swerve.SwerveDrivetrain):
         # self._module_states_pub.set(state.module_states)
         # self._module_targets_pub.set(state.module_targets)
         # self._speeds_pub.set(state.speeds)
-
-    @staticmethod
-    def get_distance_to_line(robot_pose: Pose2d, target_pose: Pose2d) -> float:
-        """
-        Find the distance from the robot to the line emanating from the target pose.
-        """
-
-        # To accomplish this, we need to find the intersection point of the line
-        # emanating from the target pose and the line perpendicular to it that passes through the robot pose.
-        # If theta is the target rotation, tan(theta) is the slope of the line from the pose. We can just call that S for the sake of solving this.
-        # Where S is the slope, (t_x, t_y) is the target position, and (r_x, r_y) is the robot position:
-        # S(x - t_x) + t_y = -1/S(x - r_x) + r_y
-        # Sx - St_x + t_y = -x/S + r_x/S + r_y
-        # Sx - St_x + t_y - r_y = (r_x - x)/S
-        # S^2x - S^2t_x + St_y - Sr_y = r_x - x
-        # S^2x + x = r_x + S^2t_x - St_y + Sr_y
-        # x(S^2 + 1) = r_x + S^2t_x - St_y + Sr_y
-        # x = (r_x + S^2t_x - St_y + Sr_y)/(S^2 + 1)
-        # We can then plug in x into our first equation to find y. This will give us the intersection point, which is the pose we want to find distance to.
-
-        slope = math.tan(target_pose.rotation().radians())
-
-        x = (robot_pose.X() + slope ** 2 * target_pose.X() - slope * target_pose.Y() + slope * robot_pose.Y()) / (slope ** 2 + 1)
-        y = slope * (x - target_pose.X()) + target_pose.Y()
-
-        possible_pose = Pose2d(x, y, target_pose.rotation())
-
-        reef_x = 4.4735 if DriverStation.getAlliance() == DriverStation.Alliance.kBlue else Constants.FIELD_LAYOUT.getFieldLength() - 4.4735
-
-        if (target_pose.X() - reef_x <= 0) == (x - reef_x <= 0):
-            return math.sqrt((possible_pose.X() - robot_pose.X()) ** 2 + (possible_pose.Y() - robot_pose.Y()) ** 2)
-        return math.inf
 
     def _start_sim_thread(self) -> None:
         """

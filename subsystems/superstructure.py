@@ -20,7 +20,14 @@ class Superstructure(Subsystem):
 
     class Goal(Enum):
         DEFAULT = auto()
-        CLIMBING = auto()
+        PASSOUTPOST = auto() # Passing to the outpost side of the alliance center
+        PASSDEPOT = auto() # Passing to the depot side of the alliance center
+        SCORE = auto() # Scoring fuel into the hub
+        CLIMBREADY = auto() # Ready to climb
+        CLIMB= auto() # Climb on to the first rung of the tower
+        DESCEND = auto() # Descend from the tower
+        INTAKE = auto() # Intaking fuel from the floor.  This goal may be removed
+
 
 
     # Map each goal to each subsystem state to reduce code complexity
@@ -29,7 +36,7 @@ class Superstructure(Subsystem):
                 Optional[VisionSubsystem.SubsystemState]
             ]] = {
         Goal.DEFAULT: (IntakeSubsystem.SubsystemState.STOP, VisionSubsystem.SubsystemState.ALL_ESTIMATES),
-        Goal.CLIMBING: (IntakeSubsystem.SubsystemState.STOP, VisionSubsystem.SubsystemState.ALL_ESTIMATES),
+        Goal.CLIMB: (IntakeSubsystem.SubsystemState.STOP, VisionSubsystem.SubsystemState.ALL_ESTIMATES),
        
     }
 

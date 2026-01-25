@@ -26,15 +26,6 @@ class Constants:
 
     FIELD_LAYOUT: Final[AprilTagFieldLayout] = AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded)
 
-    class AutoAlignConstants:
-        translationkP = 9.0
-        translationkI = 0.0
-        translationkD = 0.1
-
-        headingkP = 5.0
-        headingkI = 0.0
-        headingkD = 0.4
-
     # Hardware configurations - robot-specific
     class CanIDs:
         """CAN IDs for hardware devices. Values differ between Larry and Comp."""
@@ -51,6 +42,15 @@ class Constants:
     class VisionConstants:
         FRONT = "limelight-fr"
         LAUNCHER = "limelight-al"
+
+    class AutoAlignConstants:
+        TRANSLATION_P = 9
+        TRANSLATION_I = 0
+        TRANSLATION_D = 0.1
+        
+        HEADING_P = 1
+        HEADING_I = 0
+        HEADING_D = 0.2
 
 
 

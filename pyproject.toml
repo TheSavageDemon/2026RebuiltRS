@@ -3,7 +3,9 @@
 robotpy_version = "2026.2.1"
 
 components = [
-    "commands2"
+    "apriltag",
+    "commands2",
+    "cscore"
 ]
 
 # Other pip packages to install

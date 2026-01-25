@@ -13,7 +13,7 @@ from lib.elasticlib import Notification, NotificationLevel
 from robot_container import RobotContainer
 
 
-class Leviathan(TimedCommandRobot):
+class Oasis(TimedCommandRobot):
 
     def __init__(self, period = 0.02) -> None:
         super().__init__(period)

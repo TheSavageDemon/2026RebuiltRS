@@ -38,8 +38,8 @@ class RobotContainer:
 
         
         # Initialize subsystems as None - will be created conditionally
-        self._climber: Optional[ClimberSubsystem] = None
-        self._intake: Optional[IntakeSubsystem] = None
+        self.climber: Optional[ClimberSubsystem] = None
+        self.intake: Optional[IntakeSubsystem] = None
         self.drivetrain: Optional[SwerveSubsystem] = None
         self.vision: Optional[VisionSubsystem] = None
         match Constants.currentMode:
@@ -72,7 +72,7 @@ class RobotContainer:
                     )
                     
                     # Create climber subsystem with real hardware IO
-                    self._climber = ClimberSubsystem(climber_io)
+                    self.climber = ClimberSubsystem(climber_io)
                     print("Climber, Present")
                 else:
                     print("Climber subsystem not available on this robot")
@@ -89,13 +89,13 @@ class RobotContainer:
                 # Create climber only if it exists on this robot
                 if has_subsystem("climber"):
                     # Create climber subsystem with simulation IO
-                    self._climber = ClimberSubsystem(ClimberIOSim())
+                    self.climber = ClimberSubsystem(ClimberIOSim())
                     print("Climber, Present")
                 else:
                     print("Climber subsystem not available on this robot")
 
         self.superstructure = Superstructure(
-            self.drivetrain, self.vision, self._climber, self._intake
+            self.drivetrain, self.vision, self.climber, self.intake
         )
 
         self._setup_swerve_requests()
@@ -202,11 +202,19 @@ class RobotContainer:
             )
         )
 
-        self._driver_controller.rightBumper().whileTrue(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.CORAL_OUTPUT)
-        ).onFalse(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.HOLD)
-        )
+        if self.intake is not None:
+            self._driver_controller.rightBumper().whileTrue(
+                self.intake.set_desired_state_command(self.intake.SubsystemState.INTAKE)
+            ).onFalse(
+                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
+            )
+            self._driver_controller.leftBumper().whileTrue(
+                self.intake.set_desired_state_command(self.intake.SubsystemState.OUTPUT)
+            ).onFalse(
+                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
+            )
+        else:
+            print("Intake subsystem not available on this robot, unable to bind intake buttons")
 
         self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         self._driver_controller.b().whileTrue(
@@ -215,8 +223,9 @@ class RobotContainer:
             )
         )
 
+        
         Trigger(lambda: self._driver_controller.getLeftTriggerAxis() > 0.75).onTrue(
-            self.drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self.drivetrain.get_closest_branch(self.drivetrain.BranchSide.LEFT)))
+            self.drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self.drivetrain.get_tower_target(self.drivetrain.TowerSide.LEFT)))
         ).whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._driver_assist
@@ -226,7 +235,7 @@ class RobotContainer:
         )
 
         Trigger(lambda: self._driver_controller.getRightTriggerAxis() > 0.75).onTrue(
-            self.drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self.drivetrain.get_closest_branch(self.drivetrain.BranchSide.RIGHT)))
+            self.drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self.drivetrain.get_tower_target(self.drivetrain.TowerSide.RIGHT)))
         ).whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._driver_assist
@@ -238,16 +247,16 @@ class RobotContainer:
         self._driver_controller.start().onTrue(self.drivetrain.runOnce(lambda: self.drivetrain.seed_field_centric()))
 
         goal_bindings = {
-            self._function_controller.y(): self.superstructure.Goal.L4_CORAL,
-            self._function_controller.x(): self.superstructure.Goal.L3_CORAL,
-            self._function_controller.b(): self.superstructure.Goal.L2_CORAL,
+            self._function_controller.y(): self.superstructure.Goal.SCORE,
+            self._function_controller.x(): self.superstructure.Goal.PASSDEPOT,
+            self._function_controller.b(): self.superstructure.Goal.PASSOUTPOST,
             self._function_controller.a(): self.superstructure.Goal.DEFAULT,
-            self._function_controller.y() & self._function_controller.start(): self.superstructure.Goal.NET,
-            self._function_controller.x() & self._function_controller.start(): self.superstructure.Goal.L3_ALGAE,
-            self._function_controller.b() & self._function_controller.start(): self.superstructure.Goal.L2_ALGAE,
-            self._function_controller.a() & self._function_controller.start(): self.superstructure.Goal.PROCESSOR,
-            self._function_controller.leftStick(): self.superstructure.Goal.L1_CORAL
+            self._function_controller.leftBumper(): self.superstructure.Goal.CLIMBREADY,
+            self._function_controller.rightBumper(): self.superstructure.Goal.CLIMB,
         }
+
+        """ 
+        Leaving last year's goal bindings in for reference
 
         for button, goal in goal_bindings.items():
             if goal is self.superstructure.Goal.L3_ALGAE or goal is self.superstructure.Goal.NET or goal is self.superstructure.Goal.L2_ALGAE or goal is self.superstructure.Goal.PROCESSOR:
@@ -266,7 +275,7 @@ class RobotContainer:
         ).onFalse(
             cmd.parallel(
                 self.superstructure.set_goal_command(self.superstructure.Goal.DEFAULT),
-                self.intake.set_desired_state_command(self.intake.SubsystemState.HOLD)
+                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
             )
         )
 
@@ -278,21 +287,21 @@ class RobotContainer:
         ).onFalse(
             cmd.parallel(
                 self.superstructure.set_goal_command(self.superstructure.Goal.DEFAULT),
-                self.intake.set_desired_state_command(self.intake.SubsystemState.HOLD),
+                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP),
             )
         )
 
         (self._function_controller.povLeft() | self._function_controller.povUpLeft() | self._function_controller.povDownLeft()).onTrue(
             cmd.parallel(
                 self.climber.set_desired_state_command(self.climber.SubsystemState.CLIMB_OUT),
-                self.superstructure.set_goal_command(self.superstructure.Goal.CLIMBING)
+                self.superstructure.set_goal_command(self.superstructure.Goal.CLIMB)
             )
         ).onFalse(self.climber.set_desired_state_command(self.climber.SubsystemState.STOP))
 
         (self._function_controller.povRight() | self._function_controller.povUpRight() | self._function_controller.povDownRight()).onTrue(
             cmd.parallel(
                 self.climber.set_desired_state_command(self.climber.SubsystemState.CLIMB_IN),
-                self.superstructure.set_goal_command(self.superstructure.Goal.CLIMBING)
+                self.superstructure.set_goal_command(self.superstructure.Goal.CLIMB)
             )
         ).onFalse(self.climber.set_desired_state_command(self.climber.SubsystemState.STOP))
 
@@ -301,32 +310,33 @@ class RobotContainer:
         )
 
         self._function_controller.rightBumper().whileTrue(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.CORAL_OUTPUT)
+            self.intake.set_desired_state_command(self.intake.SubsystemState.OUTPUT)
         ).onFalse(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.HOLD)
+            self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
         )
 
         (self._function_controller.rightBumper() & self._function_controller.start()).onTrue(
             self.intake.set_desired_state_command(self.intake.SubsystemState.L1_OUTPUT)
         ).onFalse(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.HOLD)
+            self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
         )
+        """
 
     def get_autonomous_command(self) -> commands2.Command:
         return self._auto_chooser.getSelected()
     
     def get_climber(self) -> Optional[ClimberSubsystem]:
         """Get the climber subsystem if it exists on this robot."""
-        return self._climber
+        return self.climber
     
     def get_intake(self) -> Optional[IntakeSubsystem]:
         """Get the intake subsystem if it exists on this robot."""
-        return self._intake
+        return self.intake
     
     def has_climber(self) -> bool:
         """Check if climber subsystem exists on this robot."""
-        return self._climber is not None
+        return self.climber is not None
     
     def has_intake(self) -> bool:
         """Check if intake subsystem exists on this robot."""
-        return self._intake is not None
+        return self.intake is not None
