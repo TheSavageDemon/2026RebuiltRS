@@ -72,7 +72,7 @@ class TurretSubsytem(PIDSubsystem):
         proposed_angle = degrees(atan(horizontal_distance / vertical_distance_to_hub))
         return proposed_angle
 
-    def aimTowardsGoal(self):
+    def aimTowardsGoal(self, goal):
         # If the robot position is in the alliance side, call getANgleToHub before aiming
         # If the robot is in the neutral zone, have it determine what side of the zone it's on so it knows the target to aim at
         if self.currentPose.x <= Constants.AimingConstants.REDALLIANCEBORDER and self.currentPose.x >= Constants.AimingConstants.BLUEALLIANCEBORDER:
