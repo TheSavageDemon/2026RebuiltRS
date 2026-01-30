@@ -4,6 +4,7 @@ from typing import Final
 from phoenix6.configs.config_groups import Slot0Configs
 from robotpy_apriltag import AprilTagFieldLayout, AprilTagField
 from wpilib import RobotBase
+from wpimath.geometry import Pose2d
 
 from robot_config import currentRobot, Robot
 
@@ -72,6 +73,15 @@ class Constants:
     class VisionConstants:
         FRONT = "limelight-fr"
         LAUNCHER = "limelight-al"
+
+    class GoalLocations:
+        BLUEHUBTAG = Pose2d(4.020286, 4.034536)
+        BLUEDEPOTPASS = Pose2d(4.020286, 0)
+        BLUEOUTPOSTPASS = Pose2d(4.020286, 8.069072)
+
+        REDHUBTAG = Pose2d(12.517591, 4.034536)
+        REDDEPOTPASS = Pose2d(12.517591, 8.069072)
+        REDOUTPOSTPASS = Pose2d(12.517591, 0)
 
 
 
