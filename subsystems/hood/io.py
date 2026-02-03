@@ -9,6 +9,7 @@ from phoenix6.controls import PositionVoltage
 from phoenix6.hardware import TalonFX
 from phoenix6.signals import InvertedValue
 from phoenix6.signals import NeutralModeValue
+from phoenix6.units import celsius
 from pykit.autolog import autolog
 from wpilib.simulation import DCMotorSim
 from wpimath.controller import PIDController
@@ -36,6 +37,8 @@ class HoodIO(ABC):
         hood_position: radians = 0.0
         hood_applied_volts: volts = 0.0
         hood_current: amperes = 0.0
+        hood_temperature: celsius = 0.0
+        hood_setpoint: radians = 0.0
 
 
     def update_inputs(self, inputs: HoodIOInputs) -> None:
@@ -76,6 +79,7 @@ class HoodIOTalonFX(HoodIO):
         self.applied_volts = self.hood_motor.get_motor_voltage()
         self.current = self.hood_motor.get_stator_current()
         self.temperature = self.hood_motor.get_device_temp()
+        self.setpoint = self.hood_motor.get_closed_loop_reference()
 
         # Configure update frequencies
         BaseStatusSignal.set_update_frequency_for_all(
@@ -84,7 +88,8 @@ class HoodIOTalonFX(HoodIO):
             self.velocity,
             self.applied_volts,
             self.current,
-            self.temperature
+            self.temperature,
+            self.setpoint
         )
         self.hood_motor.optimize_bus_utilization()
 
@@ -99,7 +104,8 @@ class HoodIOTalonFX(HoodIO):
             self.velocity,
             self.applied_volts,
             self.current,
-            self.temperature
+            self.temperature,
+            self.setpoint
         )
 
         # Update motor inputs
@@ -109,6 +115,7 @@ class HoodIOTalonFX(HoodIO):
         inputs.hood_applied_volts = self.applied_volts.value_as_double
         inputs.hood_current = self.current.value_as_double
         inputs.hood_temperature = self.temperature.value_as_double
+        inputs.hood_setpoint = self.setpoint.value_as_double
 
     def set_position(self, rotation: Rotation2d) -> None:
         """Set the position."""

@@ -1,5 +1,8 @@
 """
 Hood subsystem
+
+TO DO:
+Integrate positions for passing (may switch to state subsystem for this)
 """
 from math import atan, sqrt, degrees
 from typing import Callable
@@ -32,7 +35,7 @@ class HoodSubsystem(Subsystem):
 
         self.at_set_point_debounce = Debouncer(0.1, Debouncer.DebounceType.kRising)
 
-        self.hub_pose = Pose2d(4.625594, 4.034536, 0.0)  # blue hub
+        self.hub_pose = Constants.FieldConstants.HUB_POSE  # blue hub
         self.launch_speed =  10.03 # meters per second
         self.distance = 1.0000000
         self.angle = 1.0000000
@@ -53,9 +56,8 @@ class HoodSubsystem(Subsystem):
         """Runs stuff periodically (every 20 ms)."""
         self.io.update_inputs(self.inputs)
         Logger.processInputs("Hood", self.inputs)
-        Logger.recordOutput("Hood/Angle", self.angle)
+        Logger.recordOutput("Hood/Calculated Angle", self.angle)
         Logger.recordOutput("Hood/Distance", self.distance)
-        Logger.recordOutput("Hood/shouldFlip", AutoBuilder.shouldFlip())
 
         self.distance = (self.robot_pose_supplier()
                          .translation().distance(self.hub_pose.translation()))
