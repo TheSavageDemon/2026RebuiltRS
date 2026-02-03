@@ -15,7 +15,7 @@ from constants import Constants
 from subsystems import StateSubsystem
 from subsystems.turret.io import TurretIO
 from math import *
-from wpimath.geometry import Pose2d
+from wpimath.geometry import Pose2d, Rotation2d
 from wpimath.controller import PIDController
 from wpilib import DriverStation
 
@@ -62,7 +62,7 @@ class TurretSubsystem(PIDSubsystem):
 
         self.positionRequest = PositionVoltage(0)
 
-        self.independentAngle = 0
+        self.independentAngle = Rotation2d(0)
         self.goal = ""
 
     def periodic(self):
@@ -105,21 +105,22 @@ class TurretSubsystem(PIDSubsystem):
         # If the robot is in the neutral zone, have it determine what side of the zone it's on so it knows the target to aim at
         match self.goal.lower():
             case "hub":
-                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEHUB.X) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDHUB.X)
-                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEHUB.Y) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDHUB.Y)
+                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEHUB.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDHUB.X())
+                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEHUB.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDHUB.Y())
             case "outpost":
-                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEOUTPOSTPASS.X) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDOUTPOSTPASS.X)
-                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEOUTPOSTPASS.Y) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDOUTPOSTPASS.Y)
+                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEOUTPOSTPASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDOUTPOSTPASS.X())
+                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEOUTPOSTPASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDOUTPOSTPASS.Y())
             case "depot":
-                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEDEPOTPASS.X) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDDEPOTPASS.X)
-                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEDEPOTPASS.Y) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDDEPOTPASS.Y)
+                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEDEPOTPASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDDEPOTPASS.X())
+                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEDEPOTPASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDDEPOTPASS.Y())
             case "_":
                 raise TypeError("Turret aiming target must be \"hub\", \"outpost\", or \"depot\"")
         target_angle = atan(ydist / xdist)
         return target_angle
 
-    def rotateTowardsGoal(self):
+    def rotateTowardsGoal(self, goal: str):
         # This function might not work because it probably isn't periodic so it'll only set the output once and then not check if the angle is correct until it's called again (which is when the target changes)
+        self.goal = goal
         targetAngle = self.getAngleToGoal()
         self.positionRequest.position = targetAngle / Constants.TurretConstants.RADTOROTRATIO
         self._turret_motor.set_control(self.positionRequest)

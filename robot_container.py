@@ -5,7 +5,7 @@ import commands2
 import commands2.button
 from commands2 import cmd, InstantCommand
 from commands2.button import CommandXboxController, Trigger
-from pathplannerlib.auto import NamedCommands, PathPlannerAuto, AutoBuilder
+from pathplannerlib.auto import NamedCommands, AutoBuilder, PathPlannerAuto
 from pathplannerlib.util import FlippingUtil
 from phoenix6 import swerve
 from phoenix6.configs import TalonFXConfiguration
@@ -27,6 +27,7 @@ from subsystems.swerve import SwerveSubsystem
 from subsystems.vision import VisionSubsystem
 from subsystems.turret import TurretSubsystem
 from subsystems.turret.io import TurretIOTalonFX, TurretIOSim
+import inspect
 
 
 class RobotContainer:
@@ -62,6 +63,9 @@ class RobotContainer:
                         self.drivetrain,
                         Constants.VisionConstants.FRONT,
                     )
+
+                if has_subsystem("turret"):
+                    self.turret = TurretSubsystem(TurretIOTalonFX(), lambda: self.drivetrain.get_state().pose)
 
                 # Create climber only if it exists on this robot
                 if has_subsystem("climber"):
@@ -221,6 +225,7 @@ class RobotContainer:
             self._function_controller.povUp(): self.superstructure.Goal.CLIMBREADY,
             self._function_controller.povDown(): self.superstructure.Goal.CLIMB,
         }
+        self._function_controller.y().onTrue(self.turret.rotateTowardsGoal("hub"))
 
         Trigger(lambda: self._function_controller.getLeftTriggerAxis() > 0.75).onTrue(
             self.vision.set_desired_state(self.vision.SubsystemState.NO_ESTIMATES)

@@ -142,7 +142,7 @@ class TurretIOSim(TurretIO):
         if self.closed_loop:
             self.AppliedVolts = self.controller.calculate(self.turretSim.getAngularPosition())
         else:
-            self.controller.reset(self.turretSim.getAngularPosition(), self.turretSim.getAngularAcceleration())
+            self.controller.reset()
 
         self.setMotorVoltage(self.AppliedVolts)
         self.turretSim.update(dt)
