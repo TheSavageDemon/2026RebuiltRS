@@ -1,9 +1,9 @@
-"""IOS"""
+"""IO"""
 from abc import ABC
 from dataclasses import dataclass
 from typing import Final
 
-from phoenix6 import BaseStatusSignal, StatusSignal
+from phoenix6 import BaseStatusSignal
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.controls import PositionVoltage
 from phoenix6.hardware import TalonFX
@@ -59,8 +59,6 @@ class HoodIOTalonFX(HoodIO):
 
         self.hood_motor: Final[TalonFX] = TalonFX(motor_id, "rio")
 
-        self.position_request = PositionVoltage
-
         motor_config = TalonFXConfiguration()
         motor_config.slot0 = Constants.HoodConstants.GAINS
         motor_config.feedback.sensor_to_mechanism_ratio = Constants.HoodConstants.GEAR_RATIO
@@ -91,7 +89,7 @@ class HoodIOTalonFX(HoodIO):
         self.hood_motor.optimize_bus_utilization()
 
         # Voltage control request
-        self.voltage_request = PositionVoltage(0)
+        self.position_request = PositionVoltage(0)
 
     def update_inputs(self, inputs: HoodIO.HoodIOInputs) -> None:
         """Update inputs with current motor state."""
@@ -114,10 +112,10 @@ class HoodIOTalonFX(HoodIO):
 
     def set_position(self, rotation: Rotation2d) -> None:
         """Set the position."""
-        self.hood_motor.set_control(self.voltage_request)
+        self.hood_motor.set_control(self.position_request)
 
 class HoodIOSim(HoodIO):
-    """sim version of HoodIO"""
+    """Sim version of HoodIO."""
 
     def __init__(self) -> None:
         gearbox = DCMotor.krakenX44FOC(1)
@@ -138,6 +136,7 @@ class HoodIOSim(HoodIO):
 
 
     def update_inputs(self, inputs: HoodIO.HoodIOInputs) -> None:
+        """Update inputs with current motor Status Signals."""
         if self.closed_loop:
             self.applied_volts = (self.controller.calculate(self.hood_sim.getAngularPosition()))
         else:
@@ -158,5 +157,6 @@ class HoodIOSim(HoodIO):
         self.applied_volts = output
 
     def set_position(self, rotation: Rotation2d) -> None:
+        """Set the position."""
         self.closed_loop = True
         self.controller.setSetpoint(rotation.radians())

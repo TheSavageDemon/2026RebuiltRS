@@ -4,24 +4,22 @@ Hood subsystem
 from math import atan, sqrt, degrees
 from typing import Callable
 
-import pathplannerlib
 from pathplannerlib.auto import FlippingUtil, AutoBuilder
-from pykit.autolog import autologgable_output, autolog
 from pykit.logger import Logger
 from wpilib import Alert, DriverStation
 from wpimath.filter import Debouncer
 from wpimath.geometry import Pose2d, Rotation2d, Pose3d
-from wpiutil.wpistruct import dataclass
 
 from constants import Constants
 from subsystems import Subsystem
 from subsystems.hood.io import HoodIO
 
+
 # pylint: disable=too-many-instance-attributes
 class HoodSubsystem(Subsystem):
-    """subsystem for hood"""
+    """Subsystem for hood."""
 
-    def __init__(self, io: HoodIO, robot_pose_supplier: Callable[[], Pose2d]):
+    def __init__(self, io: HoodIO, robot_pose_supplier: Callable[[], Pose2d]) -> None:
         super().__init__()
 
         self.io = io
@@ -39,8 +37,8 @@ class HoodSubsystem(Subsystem):
         self.distance = 1.0000000
         self.angle = 1.0000000
 
-    def update_angle(self):
-        """updates hood angle"""
+    def update_angle(self) -> None:
+        """Updates hood angle."""
         self.angle = degrees(atan(  # calculates angle
             (self.launch_speed ** 2 +
              sqrt(
@@ -51,8 +49,8 @@ class HoodSubsystem(Subsystem):
             / (9.80665 * self.distance)))
 
 
-    def periodic(self):
-        """runs stuff periodically (every 20 ms)"""
+    def periodic(self) -> None:
+        """Runs stuff periodically (every 20 ms)."""
         self.io.update_inputs(self.inputs)
         Logger.processInputs("Hood", self.inputs)
         Logger.recordOutput("Hood/Angle", self.angle)
@@ -74,4 +72,4 @@ class HoodSubsystem(Subsystem):
 
 
     def get_component_pose(self) -> Pose3d:
-        """for advantage scope modelling (placeholder)"""
+        """For advantage scope modelling (placeholder)."""

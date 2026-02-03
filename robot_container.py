@@ -41,7 +41,6 @@ class RobotContainer:
         self._driver_controller = commands2.button.CommandXboxController(0)
         self._function_controller = commands2.button.CommandXboxController(1)
 
-
         # Initialize subsystems as None - will be created conditionally
         self.climber: Optional[ClimberSubsystem] = None
         self.intake: Optional[IntakeSubsystem] = None
@@ -98,13 +97,12 @@ class RobotContainer:
 
                     hood_io = HoodIOTalonFX(
                         Constants.CanIDs.HOOD_TALON,
-                        hood_config
                     )
 
-                    self.hood = HoodSubsystem(hood_io)
-                    print("we hood")        # hood is present
+                    self.hood = HoodSubsystem(hood_io, lambda: self.drivetrain.get_state().pose)
+                    print("we hood") # hood is present
                 else:
-                    print("straight out the suburbs")       # hood is not present
+                    print("straight out the suburbs") # hood is not present
 
             case Constants.Mode.SIM:
                 # Sim robot, instantiate physics sim IO implementations (if available)
@@ -115,8 +113,8 @@ class RobotContainer:
                     Constants.VisionConstants.LAUNCHER,
                 )
                 #hood
-                self.robot_pose_supplier = lambda: self.drivetrain.get_state().pose
-                self.hood = HoodSubsystem(HoodIOSim(), self.robot_pose_supplier)
+                robot_pose_supplier = lambda: self.drivetrain.get_state().pose
+                self.hood = HoodSubsystem(HoodIOSim(), robot_pose_supplier)
 
 
                 # Create climber only if it exists on this robot
@@ -235,15 +233,9 @@ class RobotContainer:
             )
         )
 
-        if self.hood is not None: #simple binds for testing
-            self._function_controller.povLeft().whileTrue(self.hood.run(lambda: self.hood.io.set_position(Rotation2d.fromDegrees(-10))))
-            self._function_controller.povRight().whileTrue(self.hood.run(lambda: self.hood.io.set_position(Rotation2d.fromDegrees(10))))
-            self._driver_controller.povDown().whileTrue(self.hood.run(lambda:  self.hood.io.set_position(self.hood.calculate_angle() / 360)))
-        else:
-            print("bet you wish you had an adjustible hood. too bad you dont.")
-
-
-        self._driver_controller.start().onTrue(self.drivetrain.runOnce(lambda: self.drivetrain.seed_field_centric()))
+        self._driver_controller.start().onTrue(
+            self.drivetrain.runOnce(
+                lambda: self.drivetrain.seed_field_centric()))
 
         goal_bindings = {
             self._function_controller.y(): self.superstructure.Goal.SCORE,
