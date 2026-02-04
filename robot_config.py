@@ -50,7 +50,7 @@ def detect_robot() -> Robot:
             # Add other possible MAC addresses for Larry if it has multiple interfaces
         ]
         COMP_MAC_ADDRESSES = [
-            "00:80:2f:YY:YY:YY",  # Replace with Comp's actual MAC
+            "00:08:f2:83:d8:07",  # Replace with Comp's actual MAC
             # Add other possible MAC addresses for Comp if it has multiple interfaces
         ]
         
