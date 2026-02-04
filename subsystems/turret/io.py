@@ -107,8 +107,7 @@ class TurretIOTalonFX(TurretIO):
 
     def set_position(self, rotation: Rotation2d) -> None:
         """Set the position."""
-        self.position_request = rotation
-        self.turret_motor.set_control(self.position_request)
+        self.turret_motor.set_control(self.position_request.with_position(rotation))
 
 
 

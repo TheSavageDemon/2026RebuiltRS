@@ -20,13 +20,12 @@ from wpimath.controller import PIDController
 from wpimath.units import radiansToRotations
 from wpilib import DriverStation
 
-
-
-# Using intake-subsystem.py as a reference
 class TurretSubsystem(Subsystem):
-    """
-    Responsible for aiming horizontally with the turret and vertically with the variable hood.
-    """
+
+    class Goal(Enum):
+        HUB = auto()
+        DEPOT = auto()
+        OUTPOST = auto()
 
     # On the reference there's something about a CANrange here and I don't know what that means so I'm leaving it.
     
@@ -75,8 +74,6 @@ class TurretSubsystem(Subsystem):
             case "depot":
                 xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUEDEPOTPASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.REDDEPOTPASS.X())
                 ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUEDEPOTPASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.REDDEPOTPASS.Y())
-            case "_":
-                pass
         target_angle = atan(ydist / xdist)
         return target_angle
 
