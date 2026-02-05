@@ -43,7 +43,8 @@ class TurretSubsystem(Subsystem):
 
         self.positionRequest = PositionVoltage(0)
 
-        self.independentAngle = Rotation2d(0)
+        self.independent_rotation = Rotation2d(0)
+        self.current_radians = 0.0
 
         self.goal = self.Goal.NONE
 
@@ -58,13 +59,13 @@ class TurretSubsystem(Subsystem):
         # Update alerts
         self._motorDisconnectedAlert.set(not self._inputs.turret_connected)
 
-        self.currentAngle = self.robot_pose_supplier().rotation() + self.independentAngle
+        self.current_radians = self.robot_pose_supplier().rotation().radians() + self.independent_rotation.radians()
 
         if self.goal != self.Goal.NONE:
-            self.rotateTowardsGoal(self.goal)
+            self.rotate_to_goal(self.goal)
         
-    def getAngleToGoal(self):
-        # If the robot position is in the alliance side, call getANgleToHub before aiming
+    def get_radians_to_goal(self):
+        # If the robot position is in the alliance side, call get_radians_to_goal before aiming
         # If the robot is in the neutral zone, have it determine what side of the zone it's on so it knows the target to aim at
         match self.goal:
             case self.Goal.HUB:
@@ -76,12 +77,13 @@ class TurretSubsystem(Subsystem):
             case self.Goal.DEPOT:
                 xdist = abs(self.robot_pose_supplier().X() - Constants.GoalLocations.BLUE_DEPOT_PASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().X() - Constants.GoalLocations.RED_DEPOT_PASS.X())
                 ydist = abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.BLUE_DEPOT_PASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.RED_DEPOT_PASS.Y())
-        target_angle = atan(ydist / xdist)
-        return target_angle
+            case _:
+                print("No turret goal set, returning 0.0")
+                return 0.0
+        return atan(ydist / xdist)
 
-    def rotateTowardsGoal(self, target: Goal):
+    def rotate_to_goal(self, target: Goal):
         # This function might not work because it probably isn't periodic so it'll only set the output once and then not check if the angle is correct until it's called again (which is when the target changes)
         self.goal = target
-        targetAngle = self.getAngleToGoal()
-        self.positionRequest.position = radiansToRotations(targetAngle)
-        self._turret_motor.set_control(self.positionRequest)
+        target_radians = self.get_radians_to_goal()
+        self.io.set_position(target_radians)

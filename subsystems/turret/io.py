@@ -42,8 +42,12 @@ class TurretIO(ABC):
         """Update the inputs with current hardware/simulation state."""
         pass
 
-    def set_position(self, rotation: Rotation2d) -> None:
-        """Set the motor output voltage."""
+    def set_position(self, radians: float) -> None:
+        """
+        Set the turret position in radians.
+        Args:
+            radians: The position in radians to set the turret to.
+        """
         pass
 
 
@@ -105,9 +109,13 @@ class TurretIOTalonFX(TurretIO):
         inputs.turret_temperature = self.temperature.value_as_double
         inputs.turret_setpoint = self.setpoint.value_as_double
 
-    def set_position(self, rotation: Rotation2d) -> None:
-        """Set the position."""
-        self.position_request = PositionVoltage(rotation.r)
+    def set_position(self, radians: float) -> None:
+        """
+        Set the turret position in radians using closed loop control.
+        Args:
+            radians: The position in radians to set the turret to.
+        """
+        self.position_request = PositionVoltage(radians)
         self.turret_motor.set_control(self.position_request)
 
 
@@ -156,8 +164,13 @@ class TurretIOSim(TurretIO):
         self.closed_loop = False
         self.appliedVolts = output
 
-    def set_position(self, position: Rotation2d):
+    def set_position(self, radians: float):
+        """
+        Set the turret position in radians.
+        Args:
+            radians: The position in radians to set the turret to.
+        """
         self.closed_loop = True
-        self.controller.setSetpoint(position.radians())
+        self.controller.setSetpoint(radians)
 
     
