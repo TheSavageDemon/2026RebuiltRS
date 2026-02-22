@@ -1,3 +1,6 @@
+"""
+##### USELESS CACA #####
+
 from enum import auto, Enum
 from pykit.logger import Logger
 from wpilib import Alert
@@ -77,3 +80,62 @@ class TurretSubsystem(Subsystem):
     def rotate_manually(self, axis: float): # Axis is the value of the X-axis from a joystick
         target_velocity = axis * Constants.TurretConstants.MAX_MANUAL_VELOCITY
         self._io.set_velocity(target_velocity)
+"""
+
+from enum import auto, Enum
+from pykit.logger import Logger
+from wpilib import Alert
+from typing import Final, Callable
+from constants import Constants
+from subsystems import Subsystem, StateSubsystem
+from subsystems.turret.io import TurretIO
+from math import *
+from wpimath.geometry import Pose2d, Rotation2d
+from wpilib import DriverStation
+
+class TurretSubsystem(StateSubsystem):
+    
+    class SubsystemState(Enum):
+        NONE = auto()
+        HUB = auto()
+        DEPOT = auto()
+        OUTPOST = auto()
+
+    _state_configs: dict[SubsystemState, tuple[bool, Pose2d]] = { # args are 'active' and 'target position'
+        SubsystemState.NONE: (False, 0.0),
+        SubsystemState.HUB: (True, Constants.GoalLocations.BLUE_HUB if DriverStation.getAlliance() == DriverStation.Alliance.kBlue else Constants.GoalLocations.RED_HUB),
+        SubsystemState.DEPOT: (True, Constants.GoalLocations.BLUE_DEPOT_PASS if DriverStation.getAlliance() == DriverStation.Alliance.kBlue else Constants.GoalLocations.RED_HUB),
+        SubsystemState.OUTPOST: (True, Constants.GoalLocations.BLUE_HUB if DriverStation.getAlliance() == DriverStation.Alliance.kBlue else Constants.GoalLocations.RED_HUB)
+    }
+
+    def __init__(self, io: TurretIO, robot_pose_supplier: Callable[[], Pose2d]) -> None:
+        super().__init__("Turret", self.SubsystemState.HUB)
+
+        self._io: Final[TurretIO] = io
+        self.alliance = DriverStation.getAlliance()
+        self.set_desired_state(TurretSubsystem.SubsystemState.HUB)
+
+        self.robot_pose_supplier = robot_pose_supplier
+
+        self._inputs = TurretIO.TurretIOInputs()
+        self.turret_disconnected_alert = Alert("Turret motor is disconnected.", Alert.AlertType.kError)
+
+        self.turret_angle = Rotation2d(0) # Angle of the turret independent of the robot (in radians)
+        self.total_angle = 0 # Total angle of the turret, taking into account the angle of the robot (in radians)
+
+    def get_target_angle(self) -> None:
+        """Gets the angle from the robot to the target position (in radians)"""
+        relative_pose = Pose2d.relativeTo(StateSubsystem.get_current_state()[1])
+        target_angle = atan(relative_pose.Y(), relative_pose.X()) + (pi if self.alliance == DriverStation.Alliance.kRed else 0)
+        return target_angle
+
+    def periodic(self) -> None:
+
+        self._io.update_inputs(self._inputs)
+        Logger.processInputs("Turret", self._inputs)
+
+        if StateSubsystem.get_current_state[0]:
+            self.target_angle = self.get_target_angle()
+            self._io.set_position(self.target_angle)
+
+        self.turret_disconnected_alert.set(not self._inputs.turret_connected)
