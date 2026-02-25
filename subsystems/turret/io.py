@@ -44,6 +44,14 @@ class TurretIO(ABC):
         """Update the inputs with current hardware/simulation state."""
         pass
 
+    def set_zero_position_to_current(self) -> None:
+        """
+        Set the turret's zero position to its current sensor position.
+        Implementations should update their internal zero offset so that
+        the current mechanical position becomes logical zero.
+        """
+        pass
+
     def set_position(self, radians: float) -> None:
         """
         Set the turret position in radians.
@@ -124,6 +132,14 @@ class TurretIOTalonFX(TurretIO):
         inputs.turret_zero_position = self._zero_position
         inputs.turret_target_position = self.target_position
 
+    def set_zero_position_to_current(self) -> None:
+        """
+        Set the internal zero offset so that the current rotor position
+        becomes logical zero for turret motion.
+        """
+        self._zero_position = self.position.value_as_double
+        self.target_position = self._zero_position
+
     def set_position(self, radians: float) -> None:
         """
         Set the turret position in radians using closed loop control.
@@ -201,6 +217,15 @@ class TurretIOSim(TurretIO):
         inputs.turret_applied_volts = self.applied_volts
         inputs.turret_current = abs(self.turretSim.getCurrentDraw())
         inputs.turret_temperature = 25.0  # Room temperature
+
+    def set_zero_position_to_current(self) -> None:
+        """
+        Set the internal zero offset so that the current simulated position
+        becomes logical zero for turret motion.
+        """
+        # Store the current simulated position (in rotations-equivalent units)
+        # as the new zero reference.
+        self._zero_position = self.turretSim.getAngularPosition()
 
 
     def set_open_loop(self, output):

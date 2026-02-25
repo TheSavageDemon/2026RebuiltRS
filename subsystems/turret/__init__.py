@@ -41,6 +41,10 @@ class TurretSubsystem(StateSubsystem):
         self.current_radians = 0.0
         self.target_radians = 0.0
 
+        # Zeroing state
+        self._zeroing_active = False
+        self._zeroing_current_stable_cycles = 0
+
         self.x = 6.7
         self.y = 4.1
 
@@ -60,6 +64,11 @@ class TurretSubsystem(StateSubsystem):
         self.turret_disconnected_alert.set(not self._inputs.turret_connected)
 
         self.current_radians = self.robot_pose_supplier().rotation().radians() + self.independent_rotation.radians()
+
+        # If we're in the middle of a zeroing routine, handle that first.
+        if self._zeroing_active:
+            self._handle_zeroing()
+            return
 
         if self.get_current_state() != self.SubsystemState.MANUAL:
             self.rotate_to_goal(self.get_current_state())
@@ -172,3 +181,51 @@ class TurretSubsystem(StateSubsystem):
             self.rotate_to_goal(desired_state)
         else:
             self.rotate_manually(0.0)
+
+    def zero_turret(self) -> None:
+        """
+        Begin a zeroing routine:
+        - Command the turret to rotate counter-clockwise (CCW) at
+          Constants.TurretConstants.ZERO_VELOCITY using a velocity request.
+        - Periodically monitor stator current; when it indicates the turret
+          has hit the mechanical hardstop, stop motion and set the current
+          position as the new zero.
+        """
+        # Only start zeroing if not already active
+        if self._zeroing_active:
+            return
+
+        self._zeroing_active = True
+        self._zeroing_current_stable_cycles = 0
+
+        # Ensure we are in manual so auto-aim does not fight zeroing.
+        self.set_desired_state(self.SubsystemState.MANUAL)
+
+        # Motor frame is clockwise-positive, so CCW is negative.
+        self._io.set_velocity(-Constants.TurretConstants.ZERO_VELOCITY)
+
+    def _handle_zeroing(self) -> None:
+        """
+        Called from periodic while zeroing is active.
+        Uses turret current (torque) to detect when the hardstop is reached.
+        """
+        current = self._inputs.turret_current
+        velocity = self._inputs.turret_velocity
+
+        at_hardstop = (
+            current >= Constants.TurretConstants.ZERO_CURRENT_THRESHOLD
+            and abs(velocity) < Constants.TurretConstants.ZERO_VELOCITY * 0.2
+        )
+
+        if at_hardstop:
+            self._zeroing_current_stable_cycles += 1
+        else:
+            self._zeroing_current_stable_cycles = 0
+
+        # Require a few consecutive cycles above threshold to avoid false positives.
+        if self._zeroing_current_stable_cycles >= 3:
+            # Stop motion
+            self._io.set_velocity(0.0)
+            # Set current position as zero in the IO layer
+            self._io.set_zero_position_to_current()
+            self._zeroing_active = False

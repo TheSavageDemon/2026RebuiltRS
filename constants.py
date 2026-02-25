@@ -124,6 +124,10 @@ class Constants:
         MOI = .455
         MAX_ROTATIONS = 0.865967
         MAX_MANUAL_VELOCITY = 20  # rad/sec
+        ZERO_VELOCITY = 20  # rad/sec
+        # Turret zeroing threshold: when stator current exceeds this value,
+        # we assume the turret has hit the mechanical hardstop.
+        ZERO_CURRENT_THRESHOLD = 20.0  # Amperes, tune as needed
         # Only switch to other side of center when goal is at least this many degrees past middle
         CROSS_MIDDLE_HYSTERESIS_DEGREES = 5.0
 

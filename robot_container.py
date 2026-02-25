@@ -355,6 +355,10 @@ class RobotContainer:
                     InstantCommand(lambda: self.hood.rotate_manually(self._function_controller.getRightY()))
                     )
             )
+
+            self._function_controller.start().onTrue(
+                InstantCommand(lambda: self.turret.zero_turret())
+            )
            
         else:
             print("Turret or hood subsystem not available on this robot, unable to bind turret buttons")
