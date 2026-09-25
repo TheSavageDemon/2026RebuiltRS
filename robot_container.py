@@ -479,16 +479,12 @@ class RobotContainer:
             Trigger(
                 lambda: self._driver_controller.getRightTriggerAxis() > 0.75
             ).whileTrue(
-                InstantCommand(
-                    lambda: self.superstructure.set_goal_command(
-                        Superstructure.Goal.LAUNCH
-                    )
+                self.superstructure.set_goal_command(
+                    Superstructure.Goal.LAUNCH
                 )
             ).onFalse(
-                InstantCommand(
-                    lambda: self.superstructure.set_goal_command(
-                        Superstructure.Goal.STOPLAUNCH
-                    )
+                self.superstructure.set_goal_command(
+                    Superstructure.Goal.STOPLAUNCH
                 )
             )
             Trigger(
