@@ -138,6 +138,12 @@ class Constants:
         linear_std_dev_baseline = 0.02  # Meters
         angular_std_dev_baseline = 0.06  # Radians
 
+    class AutoAlignConstants:
+        HEADING_KP = 9
+        HEADING_KI = 0.0
+        HEADING_KD = .1
+        HEADING_TOLERANCE_RADIANS = math.radians(3.0)
+        
     class HoodConstants:
         GEAR_RATIO = 15.5555 # old 68 / 3
         GAINS = (Slot0Configs()

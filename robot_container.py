@@ -8,6 +8,7 @@ from commands2 import cmd, InstantCommand
 from commands2.button import Trigger
 from pathplannerlib.auto import NamedCommands, AutoBuilder, PathPlannerAuto
 from pathplannerlib.util import FlippingUtil
+from pathplannerlib.controller import PPHolonomicDriveController
 from phoenix6 import swerve
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.configs.config_groups import (NeutralModeValue,

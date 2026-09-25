@@ -8,7 +8,7 @@ from pathplannerlib.auto import AutoBuilder
 from pykit.logger import Logger
 from wpilib import DriverStation, Timer
 import wpimath
-from wpimath.geometry import Pose2d
+from wpimath.geometry import Pose2d, Rotation2d
 
 from constants import Constants
 from subsystems.aiming import ShooterAimingTable
@@ -292,6 +292,7 @@ class Superstructure(Subsystem):
         
         ### goal: get the disired angle by using trig to find the angle between the current pose and the target pose
         is_red = DriverStation.getAlliance() == DriverStation.Alliance.kRed
+        heading_offset = 0 if is_red else math.pi
         #is_red = False  # Initialize is_red to False to test blue alliance behavior
         depot_pose = Constants.GoalLocations.RED_DEPOT_PASS if is_red else Constants.GoalLocations.BLUE_DEPOT_PASS
         hub_pose = Constants.GoalLocations.RED_HUB if is_red else Constants.GoalLocations.BLUE_HUB
@@ -303,11 +304,11 @@ class Superstructure(Subsystem):
         # While in sim for some reason adding math.pi to new_angle makes it face the wrong way
         match goal:
             case "hub":
-                new_angle = math.atan2(hub_pose.Y() - robo_y, hub_pose.X() - robo_x) 
+                new_angle = math.atan2(hub_pose.Y() - robo_y, hub_pose.X() - robo_x) + heading_offset
             case "outpost":
-                new_angle = math.atan2(outpost_pose.Y() - robo_y, outpost_pose.X() - robo_x) 
+                new_angle = math.atan2(outpost_pose.Y() - robo_y, outpost_pose.X() - robo_x) + heading_offset
             case "depot":
-                new_angle = math.atan2(depot_pose.Y() - robo_y, depot_pose.X() - robo_x) 
+                new_angle = math.atan2(depot_pose.Y() - robo_y, depot_pose.X() - robo_x) + heading_offset
             case _:
                 new_angle = current_pose.rotation().radians()
         return Rotation2d(new_angle)
@@ -315,7 +316,7 @@ class Superstructure(Subsystem):
     def _heading_on_target(self) -> bool:
         """True when chassis heading matches the aim target (or no aim)."""
         
-        if self.turret is None or self._drivetrain is None:
+        if self._drivetrain is None:
             return True
         if not self.is_chassis_aiming():
             return True
